@@ -16,7 +16,7 @@ neutron security-group-rule-create --protocol 112 vrrp
 ```
 
 ### Instances
-Now create the two instances
+Now create the two instances - we'll call them vrrp-primary and vrrp-secondary:
 ```
 openstack server create --flavor m1.small --image [IMAGE_ID] \
   --nic net-id=[NETWORK_ID] --security-group default \
