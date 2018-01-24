@@ -9,10 +9,10 @@ To create an HA pair of instances you will need several things:
 * Know the size the instances need to be and choose the appropriate flavour
 * The project_id, username and password for your OpenStack account
 
-You will need to create security rules to allow the VRRP traffic between instances.  We do this by greating a new security group called vrrp
-
+You will need to create security rules to allow the VRRP traffic between instances.  In this example we do this by greating a new security group called vrrp and permit vrrp traffic (which uses protocol 112):
 ```
-openstack 
+openstack security group create vrrp --description "vrrp"
+neutron security-group-rule-create --protocol 112 vrrp
 ```
 
 ### Instances
@@ -31,11 +31,14 @@ You can verify that these instances were created using:
 openstack server list
 ```
 
+Run `nova interface-list [instance id]` for both of the instances you just created - this will show the fixed IP address for each instance along with the port ID.  Keep a note of the port ID for each instance as we'll use it later.
+
 ### Public IP addresses
-We will use three public IP addresses for this example - one for each of the instances and one that is the highly available IP which will be assigned to the primary instance when it is working with the ability to failover to the secondary instance.
-```
-openstack ip floating create public
-```
+We will use three public (floating) IP addresses for this example - one for each of the instances so we can always access them directly from the internet and one that is the highly available IP which will be assigned to the primary instance when it is working with the ability to failover to the secondary instance.
+
+Find your available floating IP addresses by running `openstack ip floating list`  ANy that are available will have "None" as their fixed IP address.  If you need more addresses, run `openstack ip floating create public`
+
+Choose three available IP addresses and assign two of them to the primary and one to the secondary.  The command to do this for each floating IP is `neutron floatingip-associate [FIP ID] [Port ID]`
 
 ### Configure the instances
 Install keepalived, python and the neutron client on each instance:
