@@ -43,76 +43,18 @@ Install keepalived, python and the neutron client on each instance:
 apt-get install keepalived python2.7 python-neutronclient
 ```
 
-Copy the failover-primary-to-secondary.sh and failover-secondary-to-primary.sh scripts into /etc/keepalived/ then edit both files to set the instance IDs:
-
-```
-#!/bin/bash
-# failover-primary-to-secondary.sh
-neutron --os-cloud 100percentit floatingip-disassociate [floatingip-ID] [vrrp-primary port ID]*
-neutron --os-cloud 100percentit floatingip-associate [floatingip-ID] [vrrp-secondary port ID]*
-```
-
-```
-#!/bin/bash
-# failover-secondary-to-primary.sh
-neutron --os-cloud 100percentit floatingip-associate [floatingip-ID] [vrrp-secondary port ID]*
-neutron --os-cloud 100percentit floatingip-disassociate [floatingip-ID] [vrrp-primary port ID]*
-```
-
-Make the scripts executable:
+Copy the failover-primary-to-secondary.sh and failover-secondary-to-primary.sh scripts into /etc/keepalived/ then edit both files to set the instance IDs and make the scripts executable:
 ```
 chmod +x /etc/keepalived/failover-primary-to-secondary.sh
 chmod +x /etc/keepalived/failover-secondary-to-primary.sh
 ```
-Copy the primary-keepalived.conf file to /etc/keepalived.conf on the primary instance then edit the file to set the network interface name:
+Copy the primary-keepalived.conf file to /etc/keepalived.conf on the primary instance and secondary-keepalived.conf file to /etc/keepalived.conf on the secondary instance then edit /etc/keepalived.conf on both instances to set the network interface name.
 
-```
-vrrp_instance vrrp_group_1 {
-state MASTER
-interface [Instance local network interface]
-virtual_router_id 1
-priority 100
-authentication {
-auth_type PASS
-auth_pass password123
-}
-notify_master /etc/keepalived/secondary-to-primary.sh
-}
-```
-Copy the secondary-keepalived.conf file to /etc/keepalived.conf on the secondary instance then edit the file to set the network interface name:
-```
-vrrp_instance vrrp_group_1 {
-state BACKUP
-interface [Instance local network interface]
-virtual_router_id 1
-priority 50
-preempt_delay 30
-authentication {
-auth_type PASS
-auth_pass password
-}
-notify_master /etc/keepalived/failover-primary-to-secondary.sh
-}
-```
-
-Setup authentication for the failover scripts to run by making a directory to hold the cloud authentiction file:
+Setup authentication for the failover scripts to run by making a directory to hold the clouds.yaml authentiction file:
 ```
 mkdir -p /root/.config/openstack
 ```
-copy the clouds.yaml file to to /root/.config/openstack/clouds.yaml and edit the file to set the project_id, username and password for your account:
-```
-clouds:
-  100percentit:
-    auth:
-      auth_url: https://cloud.100percentit.com:5000/v3
-      project_domain_name: default
-      user_domain_name: default
-      project_id: [project id]
-      username: [username]
-      password: [password]
-    region_name: RegionOne
-    interface: internal
-```
+Copy the clouds.yaml file to to /root/.config/openstack/clouds.yaml and edit the file to set the project_id, username and password for your account.
 
 ### Test it!
 The system should now work and the shared public IP address should failover from the primary to the secondary instance when the primary has a fault.  When the primary is restored the IP should be handed back 30 seconds after the primary is stable (to give enough time for other services to start - you can change this delay be editing the preempt_delay in /etc/keepalived.conf on the secondary instance.
