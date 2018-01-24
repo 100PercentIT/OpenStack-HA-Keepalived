@@ -1,0 +1,11 @@
+clouds:
+  100percentit:
+    auth:
+      auth_url: https://cloud.100percentit.com:5000/v3
+      project_domain_name: default
+      user_domain_name: default
+      project_id: [project id]
+      username: [username]
+      password: [password]
+    region_name: RegionOne
+    interface: internal
