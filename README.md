@@ -14,6 +14,24 @@ You will need to create security rules to allow the VRRP traffic between instanc
 openstack security group create vrrp --description "vrrp"
 neutron security-group-rule-create --protocol 112 vrrp
 ```
+### Network
+If you are starting without a network, you will need to make one using `openstack network create [name of new network]`
+Make a note of the network ID and then create a subnet for this network:
+```
+neutron subnet-create --name [subnet-name] --ip-version 4 [network id of new network] [network CIDR] --dns-nameserver [your nameserver 1] --dns-nameserver [your nameserver 2]
+```
+Please make a note of the subnet ID.
+
+Now create a router so we can connect our new network to the internet `neutron router-create [router name]`
+
+Attach an interface from the router to our newly created network:
+```
+neutron router-interface-add [router id] [subnet ID of our network]
+```
+We finally set the gateway on our router to the public network:
+```
+neutron router-gateway-set [router id] [public network id]
+```
 
 ### Instances
 We will create create three instances and call them vrrp-primary, vrrp-secondary and management:
