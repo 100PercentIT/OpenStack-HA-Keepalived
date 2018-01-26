@@ -16,7 +16,7 @@ neutron security-group-rule-create --protocol 112 vrrp
 ```
 
 ### Instances
-Now create the two instances - we'll call them vrrp-primary and vrrp-secondary:
+We will create create three instances and call them vrrp-primary, vrrp-secondary and management:
 ```
 openstack server create --flavor m1.small --image [IMAGE_ID] \
   --nic net-id=[NETWORK_ID] --security-group default \
@@ -25,28 +25,32 @@ openstack server create --flavor m1.small --image [IMAGE_ID] \
 openstack server create --flavor m1.small --image [IMAGE_ID] \
   --nic net-id=[NETWORK_ID] --security-group default \
   --security-group vrrp --key-name [KEY_ID] vrrp-secondary
+
+openstack server create --flavor m1.small --image [IMAGE_ID] \
+  --nic net-id=[NETWORK_ID] --security-group default \
+  --key-name [KEY_ID] management
 ```
-You can verify that these instances were created using:
+The management instance will have independent public IP address for access directly by SSH from your local computer.  It will be used to manage the other instances.  You can verify that these instances were created using:
 ```
 openstack server list
 ```
+Get the instance IDs for the new instances and run `nova interface-list [instance id]` for each of them - this will show the fixed IP address for each instance along with the port ID.  Keep a note of the port ID for each instance as we'll use it later.
 
-Run `nova interface-list [instance id]` for both of the instances you just created - this will show the fixed IP address for each instance along with the port ID.  Keep a note of the port ID for each instance as we'll use it later.
+You will need to put your SSH private key on the management instance in `~/.ssh/id_rsa` to be able to SSH from there to your VRRP instances. Make sure you secure this file's permissions using `chmod 600 /root/.ssh/id_rsa` then check you can SSH from the management instance to the VRRP instances.
 
 ### Public IP addresses
-We will use three public (floating) IP addresses for this example - one for each of the instances so we can always access them directly from the internet and one that is the highly available IP which will be assigned to the primary instance when it is working with the ability to failover to the secondary instance.
+We will use two public (floating) IP addresses for this example - one for the management instance and one that is the highly available IP which will be assigned to the primary VRRP instance when it is working with the ability to failover to the secondary VRRP instance.
 
-Find your available floating IP addresses by running `openstack ip floating list`  ANy that are available will have "None" as their fixed IP address.  If you need more addresses, run `openstack ip floating create public`
+Find your available floating IP addresses by running `openstack ip floating list`.  Available addresses will have "None" as their fixed IP address.  If you need more floating IP addresses, run `openstack ip floating create public`
 
-Choose three available IP addresses and assign two of them to the primary and one to the secondary.  The command to do this for each floating IP is `neutron floatingip-associate [FIP ID] [Port ID]`
+Choose two available IP addresses and assign one of them to the management instance, we will use the other IP address in the configuration section next.  The command to do this IP is `neutron floatingip-associate [FIP ID] [Port ID of management instance]`
 
 ### Configure the instances
 Install keepalived, python and the neutron client on each instance:
 ```
 apt-get install keepalived python2.7 python-neutronclient
 ```
-
-Copy the failover-primary-to-secondary.sh and failover-secondary-to-primary.sh scripts into /etc/keepalived/ then edit both files to set the instance IDs and make the scripts executable:
+Setup the keepalived failover scripts by copying the failover-primary-to-secondary.sh and failover-secondary-to-primary.sh scripts into /etc/keepalived/ on the instances then edit both files to set the instance IDs and make the scripts executable using:
 ```
 chmod +x /etc/keepalived/failover-primary-to-secondary.sh
 chmod +x /etc/keepalived/failover-secondary-to-primary.sh
