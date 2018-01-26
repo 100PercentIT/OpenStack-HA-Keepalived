@@ -93,6 +93,7 @@ apt-get install apache2
 Edit the /var/www/index.html file so that we can distinguish between the instances:
 
 On the primary run `echo "Primary" > /var/www/html/index.html`
+
 On the secondary run `echo "Secondary" > /var/www/html/index.html`
 
 Now put the shared public IP address into a web browser on your local computer - you should see a simple page saying "Primary"
