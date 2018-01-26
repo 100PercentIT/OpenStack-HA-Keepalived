@@ -64,6 +64,33 @@ Find your available floating IP addresses by running `openstack ip floating list
 Choose two available IP addresses and assign one of them to the management instance, we will use the other IP address in the configuration section next.  The command to do this IP is `neutron floatingip-associate [FIP ID] [Port ID of management instance]`
 
 ### Configure the instances
+#### Finding the interface name of the VM:
+In order to configure the keepalived configuration correctly, you need to know the name of the interface. This name differ between different boot images. You can find the name of the interface by running `ifconfig` on the instance.
+
+There should only be two interfaces, the one that we are looking for has an IP address on the subnet we created earlier.  An example output is:
+
+```
+ens3      Link encap:Ethernet  HWaddr 02:36:c1:51:a7:6e
+          inet addr:10.100.0.6  Bcast:10.100.0.255  Mask:255.255.255.0
+          inet6 addr: fe80::36:c1ff:fe51:a76e/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:100594 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:8869 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:137743955 (137.7 MB)  TX bytes:914273 (914.2 KB)
+
+lo        Link encap:Local Loopback
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:65536  Metric:1
+          RX packets:496 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:496 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1
+          RX bytes:36816 (36.8 KB)  TX bytes:36816 (36.8 KB)
+```
+In this example the interface **ens3** has an IP on our subnet, we will use "ens3" in our keepalived configuration.
+
+#### Setup Keepalived
 Install keepalived, python and the neutron client on each instance:
 ```
 apt-get install keepalived python2.7 python-neutronclient
